@@ -1,22 +1,11 @@
-Okay, I've made the player responsive. The main changes involve adjusting the layout and element sizes for smaller screens.
 
-*   **Layout Switch:** On screens smaller than 900px (likely mobile/tablet), the main video area and sidebar now stack vertically instead of side-by-side. The sidebar becomes the bottom section.
-*   **Sidebar Adjustment:** The sidebar's fixed width is removed on small screens, and it gains a top border to separate it from the video area.
-*   **Video Container:** The video container's border-radius is removed on small screens to maximize space, and its border is also removed.
-*   **Meta Bar:** The meta bar gets padding to provide space and a background color to sit nicely on top of the video container when it has no border.
-*   **Sidebar Tabs:** The season tabs inside the sidebar now use `flex-wrap: wrap` so they stack vertically if the screen is very narrow.
-*   **Sidebar Width:** The sidebar's width was reduced from `420px` to `400px` to provide a slightly better balance on medium-width screens before the full vertical switch.
-
-Here's the updated code:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JJK | Domain Expansion Player</title>
-  <link rel="icon" href="https://www.rw-designer.com/icon-view/24843.png" type="image/png">
+<link rel="icon" href="https://www.rw-designer.com/icon-view/24843.png" type="image/png">
 <style>
 :root {
 --app-bg: #09090b;       /* Very dark almost black */
@@ -508,4 +497,5 @@ loadSeason(1);
 </script>
 </body>
 </html>
-```
+
+
