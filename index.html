@@ -537,7 +537,7 @@
             
             // Set Video Source
             video.src = ep.u;
-            document.getElementById('vlc-btn').href = `vlc://${ep.u}`;
+            document.getElementById('vlc-btn').href = `intent:${ep.u}`;
 
             // Restore Time
             const history = state.history[ep.u];
@@ -621,3 +621,4 @@
     </script>
 </body>
 </html>
+
