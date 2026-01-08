@@ -1,831 +1,511 @@
+Okay, I've made the player responsive. The main changes involve adjusting the layout and element sizes for smaller screens.
+
+*   **Layout Switch:** On screens smaller than 900px (likely mobile/tablet), the main video area and sidebar now stack vertically instead of side-by-side. The sidebar becomes the bottom section.
+*   **Sidebar Adjustment:** The sidebar's fixed width is removed on small screens, and it gains a top border to separate it from the video area.
+*   **Video Container:** The video container's border-radius is removed on small screens to maximize space, and its border is also removed.
+*   **Meta Bar:** The meta bar gets padding to provide space and a background color to sit nicely on top of the video container when it has no border.
+*   **Sidebar Tabs:** The season tabs inside the sidebar now use `flex-wrap: wrap` so they stack vertically if the screen is very narrow.
+*   **Sidebar Width:** The sidebar's width was reduced from `420px` to `400px` to provide a slightly better balance on medium-width screens before the full vertical switch.
+
+Here's the updated code:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Existing scripts for video and XLSX handling -->
-  <script type="text/javascript">
-    var gk_isXlsx = false;
-    var gk_xlsxFileLookup = {};
-    var gk_fileData = {};
-    function filledCell(cell) {
-      return cell !== '' && cell != null;
-    }
-    function loadFileData(filename) {
-      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          if (headerRowIndex === -1 || headerRowIndex > 25) headerRowIndex = 0;
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-        } catch (e) {
-          console.error(e);
-          return "";
-        }
-      }
-      return gk_fileData[filename] || "";
-    }
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JJK | Domain Expansion Player</title>
+  <link rel="icon" href="https://www.rw-designer.com/icon-view/24843.png" type="image/png">
+<style>
+:root {
+--app-bg: #09090b;       /* Very dark almost black */
+--sidebar-bg: #101012;   /* Slightly lighter for sidebar */
+--card-bg: #1c1c1f;      /* Item background */
+--card-hover: #27272a;   /* Item hover */
+--accent: #e11d48;       /* Jujutsu Red */
+--accent-glow: rgba(225, 29, 72, 0.15);
+--text-main: #ffffff;
+--text-muted: #a1a1aa;
+--border: #27272a;
+--radius-lg: 12px;
+--radius-md: 8px;
+--radius-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+body {
+background-color: var(--app-bg);
+color: var(--text-main);
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+height: 100vh;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+/* --- HEADER (App Bar) --- */
+header {
+background-color: var(--app-bg); /* Seamless blend */
+height: 64px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 0 24px;
+border-bottom: 1px solid var(--border);
+flex-shrink: 0;
+}
+.brand {
+font-size: 1.25rem;
+font-weight: 800;
+letter-spacing: -0.025em;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.brand span { color: var(--accent); }
+/* Fake dot indicator for app feel */
+.brand::before { content: ''; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; }
+.btn-reset {
+background: transparent;
+border: 1px solid var(--border);
+color: var(--text-muted);
+padding: 6px 14px;
+font-size: 0.8rem;
+font-weight: 500;
+cursor: pointer;
+border-radius: 20px; /* Pill shape */
+transition: all 0.2s ease;
+}
+.btn-reset:hover { border-color: var(--accent); color: var(--text-main); background: var(--accent-glow); }
+/* --- MAIN LAYOUT --- */
+.layout {
+display: flex;
+flex: 1;
+height: calc(100vh - 64px);
+overflow: hidden;
+}
+/* --- VIDEO STAGE --- */
+.main-stage {
+flex: 1;
+display: flex;
+flex-direction: column;
+background: var(--app-bg);
+padding: 24px; /* Space around the video */
+gap: 20px;
+overflow-y: auto;
+}
+/* The Video Box - Floating App Style */
+.video-container {
+width: 100%;
+max-height: 80vh;
+background: #000;
+border-radius: var(--radius-lg);
+overflow: hidden;
+box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.7); /* Deep shadow */
+border: 1px solid var(--border);
+position: relative;
+aspect-ratio: 16/9;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+video { width: 100%; height: 100%; object-fit: contain; }
+.meta-bar {
+display: flex;
+justify-content: space-between;
+align-items: flex-end;
+padding: 0 4px;
+}
+.episode-info h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em; }
+.episode-info p { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+.btn-open-app {
+background-color: #2a2a2e; /* Neutral button */
+color: #fff;
+text-decoration: none;
+padding: 10px 18px;
+border-radius: var(--radius-md);
+font-weight: 600;
+font-size: 0.9rem;
+display: flex;
+align-items: center;
+gap: 10px;
+transition: 0.2s;
+border: 1px solid transparent;
+}
+.btn-open-app:hover { background-color: #3f3f46; transform: translateY(-1px); }
+.btn-open-app svg { color: #f59e0b; /* Generic icon color, could be different */ }
+/* --- SIDEBAR --- */
+.sidebar {
+width: 400px; /* Reduced from 420px */
+background-color: var(--sidebar-bg);
+border-left: 1px solid var(--border);
+display: flex;
+flex-direction: column;
+}
+/* iOS Segmented Control Style Tabs */
+.season-tabs {
+display: flex;
+padding: 16px;
+gap: 8px;
+flex-wrap: wrap; /* Allow tabs to wrap if screen is narrow */
+}
+.tab {
+flex: 1;
+padding: 8px;
+text-align: center;
+background: transparent;
+color: var(--text-muted);
+cursor: pointer;
+font-weight: 600;
+font-size: 0.9rem;
+border-radius: var(--radius-md);
+transition: all 0.2s;
+}
+.tab:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+.tab.active {
+background: var(--card-bg);
+color: var(--text-main);
+box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+border: 1px solid var(--border);
+}
+.playlist {
+flex: 1;
+overflow-y: auto;
+padding: 0 16px 24px 16px; /* Padding inside scroll area */
+}
+/* Episode Card "App" Look */
+.ep-card {
+display: flex;
+flex-direction: column;
+padding: 14px 16px;
+margin-bottom: 8px;
+background-color: transparent; /* Clean look */
+border-radius: var(--radius-md);
+cursor: pointer;
+transition: all 0.2s ease;
+border: 1px solid transparent;
+}
+.ep-card:hover { background-color: var(--card-hover); }
+/* Active State */
+.ep-card.active {
+background-color: var(--card-bg);
+border-color: var(--border);
+box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+/* Playing Indicator (Little red bar on left) */
+.ep-card.active::before {
+content: '';
+position: absolute;
+left: 20px; /* adjusted for padding */
+height: 16px;
+width: 3px;
+background: var(--accent);
+border-radius: 2px;
+display: none; /* Hide generally */
+}
+.ep-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;}
+/* Typography for list */
+.ep-title {
+font-weight: 500;
+font-size: 0.95rem;
+line-height: 1.4;
+color: var(--text-muted); /* Dim by default */
+transition: color 0.2s;
+}
+.ep-card:hover .ep-title { color: var(--text-main); }
+.ep-card.active .ep-title { color: var(--accent); font-weight: 600; }
+.ep-meta { display: flex; gap: 8px; margin-top: 6px; }
+.ep-tag {
+font-size: 10px;
+font-weight: 700;
+text-transform: uppercase;
+background: #27272a;
+color: #71717a;
+padding: 3px 6px;
+border-radius: 4px;
+letter-spacing: 0.5px;
+}
+/* Custom Progress Bar */
+.progress-track {
+height: 3px;
+background: #27272a;
+width: 100%;
+margin-top: 10px;
+border-radius: 10px;
+overflow: hidden;
+opacity: 0; /* Hidden until started */
+transition: opacity 0.2s;
+}
+.progress-bar { height: 100%; background: var(--accent); width: 0%; border-radius: 10px; }
+.ep-card.started .progress-track { opacity: 1; }
+.ep-card.completed .ep-title { text-decoration: line-through; opacity: 0.6; }
+/* --- CUSTOM SCROLLBAR (Chrome/Edge/Safari) --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+/* --- BANNER --- */
+#resume-banner {
+background: var(--accent);
+color: white;
+padding: 14px 24px;
+font-size: 0.9rem;
+font-weight: 500;
+display: none;
+justify-content: space-between;
+align-items: center;
+cursor: pointer;
+box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
+z-index: 20;
+}
+#resume-banner:hover { filter: brightness(110%); }
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>পড় মন দিয়া</title>
-  <link rel="icon" href="https://cdn-icons-png.freepik.com/512/7856/7856382.png" type="image/png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://cdn.plyr.io/3.7.8/plyr.css" rel="stylesheet">
- <style>
-  /* Base Styles */
-  html, body {
-    margin: 0;
-    padding: 0;
-    /* Use a clean, sans-serif font */
-    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #171717; /* Very dark background */
-    color: #e0e0e0; /* Light text color */
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-
-  /* Header/Navbar Area */
-  header {
-    background-color: #171717; /* Background remains dark */
-    /* Remove padding and margin specific to the header to make it full width */
-    padding: 0;
-    margin: 0;
-    max-width: 100%;
-    width: 100%;
-    box-sizing: border-box;
-    /* Add padding for the content inside */
-    padding: 1rem 2rem; 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #282828; /* Subtle bottom border */
-  }
-  
-  /* Logo/Title area styling (e.g., if there's a title with specific colors) */
-  .logo-text {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #f0f0f0;
-    display: flex;
-    align-items: center;
-  }
-
-  /* Main Content Layout (simulating a two-column or split layout) */
-  .main-content-container {
-    display: flex;
-    gap: 1.5rem;
-    padding: 1.5rem 2rem;
-    max-width: 1200px; /* Max width for content */
-    margin: 0 auto;
-  }
-
-  /* Left Panel: Live Class (Video Player and Buttons) */
-  .live-class-panel {
-    flex: 3; /* Takes up more space */
-  }
-
-  /* Right Panel: Class List */
-  .class-list-panel {
-    flex: 1.2; /* Takes up less space */
-    min-width: 300px;
-    background-color: #212121; /* Slightly lighter background for the list container */
-    border-radius: 0.5rem;
-    padding: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Card/Container styles (e.g., the video player container) */
-  .bg-white {
-    /* Used for the overall container in the image, e.g., surrounding the player */
-    background-color: #212121 !important; 
-    border: none; /* No border visible in the image */
-    border-radius: 0.5rem;
-    padding: 0; /* Remove internal padding to allow player to touch edges */
-    margin-bottom: 1.5rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  /* Headings for the sections */
-  .section-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #55aaff; /* Blue color for the section title (Live Class / Class List) */
-    display: flex;
-    align-items: center;
-    padding: 0 1rem 0.5rem;
-  }
-  
-  .class-list-panel .section-title {
-    padding: 0 0 0.5rem 0; /* Adjust padding for the list panel */
-  }
-
-  /* Text Colors/Sizes */
-  .text-gray-100, .text-lg {
-    color: #e0e0e0 !important;
-  }
-
-  /* Class List Styles */
-  #classList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  #classList li {
-    color: #e0e0e0;
-    padding: 0.75rem 1rem;
-    border-radius: 0.4rem;
-    background-color: transparent; /* Default transparent */
-    margin-bottom: 0.3rem;
-    transition: background-color 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-  
-  /* Style for the active/selected class item */
-  #classList li:first-child { 
-    background-color: #0b1f3c; /* Dark blue background for selected item */
-    color: #55aaff; /* Blue text color for selected item */
-  }
-
-  #classList li:not(:first-child):hover {
-    background-color: #2b2b2b; /* Hover for non-selected items */
-  }
-  
-  .list-item-icon {
-    color: #e0e0e0; /* Default icon color */
-  }
-  
-  #classList li:first-child .list-item-icon {
-    color: #55aaff; /* Blue icon color for selected item */
-  }
-
-
-  /* Button Styles (Download PDF & Open on YouTube) */
-  .button-group {
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-  }
-
-  .download-pdf-button, .open-youtube-button {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.4rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    border: none;
-    font-size: 1rem;
-  }
-
-  .download-pdf-button {
-    background-color: #38a169; /* Green background */
-    color: #fff;
-  }
-  
-  .download-pdf-button:hover {
-    background-color: #2f855a;
-  }
-
-  .open-youtube-button {
-    background-color: #55aaff; /* Blue background */
-    color: #fff;
-  }
-  
-  .open-youtube-button:hover {
-    background-color: #4499ee;
-  }
-
-  /* Ensure video player container matches background */
-  .plyr {
-    border-radius: 0.5rem;
-    background-color: #212121; /* Match main container background */
-    overflow: hidden;
-    max-width: 100%;
-  }
-
-  /* Footer/Quote Area */
-  .footer-quotes {
-    font-size: 0.85rem;
-    color: #888;
-    text-align: right; /* Match alignment in the image */
-    margin-top: 0;
-    padding: 0 1rem 1rem;
-  }
-
-  .footer-quotes p {
-    margin: 0.4rem 0;
-  }
-
-  /* Hide elements not present in the image */
-  header {
-    /* Assuming header has the logo and the quote on the right */
-    background-color: #171717;
-  }
-  
-  .bg-blue-200 { /* Not explicitly visible in the final desired look */
-    display: none !important;
-  }
-  
-  .text-red-500 {
-    color: #e74c3c; /* A deep red for contrast, if used */
-  }
-  
-  .shadow-md {
-    /* Use for any remaining general shadow/border elements */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  h1, h2, footer { /* Hide or style elements not matching the image's structure */
-    display: none; /* Hide generic headers/footers if they clash with the image */
-  }
-
-  /* Media Queries for Responsiveness */
-  @media (max-width: 1024px) {
-    .main-content-container {
-      flex-direction: column;
-      padding: 1rem;
-    }
-    
-    .live-class-panel, .class-list-panel {
-      flex: none;
-      min-width: unset;
-    }
-  }
-
-  @media (max-width: 768px) {
-    header {
-      padding: 0.75rem 1rem;
-    }
-    
-    .button-group {
-      flex-direction: column;
-    }
-
-    .download-pdf-button, .open-youtube-button {
-      font-size: 0.9rem;
-      padding: 0.6rem 1rem;
-    }
-    
-    .section-title {
-      padding: 0 0.5rem 0.5rem;
-    }
-  }
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 900px) {
+.layout {
+flex-direction: column; /* Stack video and sidebar vertically */
+overflow-y: auto; /* Allow scrolling the whole layout */
+height: auto; /* Let it grow based on content */
+}
+.sidebar {
+width: 100%; /* Full width on mobile */
+border-left: none; /* Remove left border */
+border-top: 1px solid var(--border); /* Add top border to separate from video */
+height: auto; /* Remove fixed height */
+min-height: 400px; /* Ensure minimum height for content */
+}
+.main-stage {
+padding: 0; /* Remove padding around video */
+gap: 0; /* Remove gap */
+}
+.video-container {
+border-radius: 0; /* Remove radius for full width */
+border: none; /* Remove border */
+}
+.meta-bar {
+padding: 16px; /* Add padding to meta bar */
+background: var(--app-bg); /* Add background color */
+}
+}
 </style>
-
 </head>
-<body class="font-sans">
-  <header class="bg-black text-white p-4 flex items-center">
-    <img src="https://bondipathshala.com.bd/files/logo.png" alt="Bondi Pathshala Logo" class="h-10">
-    <h1 class="ml-4 text-xl font-bold">পড়ালেখা করা ভালো</h1>
-  </header>
-
-  <div class="container mx-auto p-4 flex flex-col lg:flex-row gap-4">
-    <div class="lg:w-3/4 bg-white rounded-lg shadow-md p-4">
-      <h2 class="text-lg font-semibold mb-4 text-gray-100">Live Class</h2>
-      <div style="position: relative;"> <!-- Wrapper for player and custom share button -->
-        <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="RUQcm3vIbWo"></div>
-        <button id="customShareBtn" title="Share" style="position: absolute; top: 15px; right: 15px; z-index: 20; background: none; border: none; cursor: pointer; padding: 0;">
-          <i class="fas fa-share-alt" style="color: white; font-size: 20px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));"></i>
-        </button>
-      </div>
-      <div class="flex space-x-4 mt-4">
-        <a id="downloadPdfBtn" href="https://www.bondipathshala.com.bd/pdf/20240527-1716748184-LRH05IsN.pdf" target="_blank" class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          <i class="fas fa-file-pdf mr-2"></i>Download PDF
-        </a>
-        <button id="downloadEmojiBtn" class="download-emoji">
-          <i class="fas fa-smile mr-2"></i>Open on YouTube
-        </button>
-      </div>
-    </div>
-
-    <div class="lg:w-1/4 bg-white rounded-lg shadow-md p-4">
-      <button id="openAddVideoBtn" class="w-full bg-black text-white p-2 rounded mb-4 fake-button">
-        <i class="fas fa-plus mr-2"></i>Add New Class
-      </button>
-
-      <h2 class="text-lg font-semibold mb-4 text-gray-100">Class List</h2>
-      <ul id="classList" class="space-y-2 max-h-96 overflow-y-auto">
-       <li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="BzX25StCOyQ" data-nname="জৈব যৌগের ইতিহাস - পর্ব ০১" data-npdf="20250521-1747767276-zTUgBskf.pdf">
-  জৈব যৌগের ইতিহাস - পর্ব ০১ <i class="fas fa-file-pdf text-red-500 ml-2"></i>
-</li>
-<li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="a_tsletdZjs" data-nname="জৈব যৌগের ইতিহাস - পর্ব ০২" data-npdf="20250525-1748120787-RXz1vtTE.pdf">
-  জৈব যৌগের ইতিহাস - পর্ব ০২ <i class="fas fa-file-pdf text-red-500 ml-2"></i>
-</li>
-<li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="9055Ce-Ehd4" data-nname="জৈব যৌগের ইতিহাস  - পর্ব ০৩" data-npdf="20250526-1748209809-b0ltKw7V.pdf">
-  জৈব যৌগের ইতিহাস  - পর্ব ০৩ <i class="fas fa-file-pdf text-red-500 ml-2"></i>
-</li>
-<li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="CVCW92j2zSw" data-nname="জৈব যৌগ - পর্ব ০৪" data-npdf="20250529-1748503530-x3r34ooq.pdf">
-  জৈব যৌগের ইতিহাস - পর্ব ০৪ <i class="fas fa-file-pdf text-red-500 ml-2"></i>
-</li>
-<li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="XqMsgz9yTto" data-nname="জৈব যৌগ - পর্ব ০৫" data-npdf="20250530-1748546953-jhRBbO4q.pdf">
-  জৈব যৌগের ইতিহাস - পর্ব ০৫ <i class="fas fa-file-pdf text-red-500 ml-2"></i>
-</li>
-        <li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="vaF4aRwLdok">
-  জৈব রসায়ন - পর্ব ০৬
-</li>
-<li class="class-item p-2 rounded hover:bg-blue-100 cursor-pointer" data-vid="HqF4pBphbKM" data-nname="সমানুতা - পর্ব ০১" data-npdf="20250620-1750424001-AZt5hROq.pdf">
-  সমানুতা - পর্ব ০১ <i class="fas fa-file-pdf text-red-500 ml-2"></i>
-</li>
-      </ul>
-    </div>
-  </div>
-
-<footer class="bg-gray-900 text-white py-8 px-4 md:px-8 relative overflow-hidden">
-  <!-- Neon Glow Background Effect -->
-  <div class="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-cyan-500/20 to-lime-500/20 animate-pulse"></div>
-  
-  <div class="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left relative z-10">
-    <!-- Brand/Logo Section -->
-    <div>
-      <h2 class="text-3xl font-extrabold tracking-wider text-lime-400>Bondi Pathshala</h2>
-      <p class="mt-2 text-lime-300 t-medium">Bondi Pathshala</p>
-    </div>
-
-    <!-- Navigation Links -->
-    <div>
-      <h3 class="text-lg font-bold text-lime-400 mb-4 drop-shadow-[0_0_8px_rgba(132,204,22,0.6)]">মন ফ্রেশ থাকলে পড়া বেশি মনে থাকে!</h3>
-      <ul class="space-y-2 text-cyan-300 text-sm">
-  <li>পড়ায় ঝড় তুলো!</li>
-  <li>রঙিন নোট ফাটাও!</li>
-  <li> বই পড়ো!</li>
-      </ul>
-    </div>
-
-    <!-- Social Media & Contact -->
-    <div>
-      <h3 class="text-lg font-bold text-lime-400 mb-4 drop-shadow-[0_0_8px_rgba(132,204,22,0.6)]">Connect With Us</h3>
-      <div class="flex justify-center md:justify-start space-x-4 mb-4">
-        <a href="#" class="hover:scale-110 transform transition-transform duration-300 drop-shadow-[0_0_6px_rgba(236,72,153,0.5)]">
-          <svg class="w-6 h-6 fill-current text-cyan-300 hover:text-pink-400" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-          </svg>
-        </a>
-        <a href="#" class="hover:scale-110 transform transition-transform duration-300 drop-shadow-[0_0_6px_rgba(236,72,153,0.5)]">
-          <svg class="w-6 h-6 fill-current text-cyan-300 hover:text-pink-400" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 14v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-          </svg>
-        </a>
-      </div>
-      <p class="text-cyan-300 text-sm font-medium">Email: <a href="mailto:arnoy799@gmail.com" class="hover:text-pink-400 transition-colors duration-300 hover:drop-shadow-[0_0_6px_rgba(236,72,153,0.5)]">arnoy799@gmail.com</a></p>
-    </div>
-  </div>
-
-  <!-- Bottom Bar -->
-  <div class="border-t border-pink-500/50 mt-8 pt-4 text-center text-cyan-300 text-sm font-medium">
-    <p>© 2025 Bondi Pathshala. All rights reserved.</p>
-  </div>
-</footer>
-
-<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+<body>
+<header>
+<div class="brand">Jujutsu <span>Kaisen</span></div>
+<button class="btn-reset" onclick="resetHistory()">Reset Progress</button>
+</header>
+<div id="resume-banner" onclick="resumeLast()">
+<span><strong>Welcome back.</strong> Continue where you left off?</span>
+<span>▶ Resume</span>
+</div>
+<div class="layout">
+<!-- Main Video Area -->
+<div class="main-stage">
+<div class="video-container">
+<video id="player" controls poster="https://wallpapers.com/images/hd/jujutsu-kaisen-purple-aesthetic-pc-q4k3w4w4w4w4w4w4.jpg">
+Your browser does not support the video tag.
+</video>
+</div>
+<div class="meta-bar">
+<div class="episode-info">
+<h2 id="vid-title">Select an Episode</h2>
+<p id="vid-meta">Season 1 & 2 • Dual Audio (Hin/Jap/Eng)</p>
+</div>
+<div class="action-area">
+<div class="vlc-subtext">Audio tracks available in external player</div>
+<a href="#" id="open-app-btn" class="btn-open-app">
+<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a.5.5 0 0 1 .473.337L9.046 2h2.454a.5.5 0 0 1 0 1H9.473l.237 1.097 2.614.83a.5.5 0 0 1 .153.886l-2.006 1.339.637 2.185a.5.5 0 0 1-.854.62l-1.615-1.468-1.615 1.468a.5.5 0 0 1-.854-.62l.637-2.185-2.006-1.339a.5.5 0 0 1 .153-.886l2.614-.83.237-1.097H2.5a.5.5 0 0 1 0-1h2.454L5.527.337A.5.5 0 0 1 6 0h2zm0 3Z"/></svg>
+Open in App
+</a>
+</div>
+</div>
+</div>
+<!-- Sidebar List -->
+<div class="sidebar">
+<div class="season-tabs">
+<div class="tab active" onclick="loadSeason(1)">Season 1</div>
+<div class="tab" onclick="loadSeason(2)">Season 2</div>
+</div>
+<div class="playlist" id="playlist">
+<!-- JS will fill this -->
+</div>
+</div>
+</div>
 <script>
-  const player = new Plyr('#player', {
-    controls: ['play-large', 'rewind', 'play', 'fast-forward', 'progress', 'current-time', 'settings', 'pip', 'fullscreen'],
-    youtube: { noCookie: true, rel: 0, showinfo: 0, modestbranding: 1 },
-    settings: ['quality', 'speed'],
-    speed: { selected: 1, options: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] }
-  });
-
-const container = player.elements.container;
-
-// Create skip buttons
-const skipLeft = document.createElement('button');
-const skipRight = document.createElement('button');
-
-// Set icons (replace with your image URLs)
-skipLeft.innerHTML = `<img src="https://cdn-icons-png.freepik.com/512/4553/4553697.png" alt="Back" style="width:28px;height:28px;">`;
-skipRight.innerHTML = `<img src="https://cdn-icons-png.freepik.com/512/4553/4553697.png" alt="Forward" style="width:28px;height:28px;">`;
-
-// Common style
-const styleSkipButton = (btn, position) => {
-  Object.assign(btn.style, {
-    position: 'absolute',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: '#3a3a3a',
-    border: 'none',
-    borderRadius: '50%',
-    padding: '16px',
-    zIndex: 12,
-    opacity: 0,
-    transition: 'opacity 0.3s',
-    pointerEvents: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  });
-  btn.style.left = position;
-};
-
-// Position buttons near center
-styleSkipButton(skipLeft, 'calc(50% - 120px)');
-styleSkipButton(skipRight, 'calc(50% + 60px)');
-
-// Append to player
-container.style.position = 'relative';
-container.appendChild(skipLeft);
-container.appendChild(skipRight);
-
-// Click actions
-skipLeft.addEventListener('click', () => {
-  player.currentTime = Math.max(0, player.currentTime - 10);
-  showToast('⏪ 10s');
-});
-skipRight.addEventListener('click', () => {
-  player.currentTime = Math.min(player.duration, player.currentTime + 10);
-  showToast('⏩ 10s');
-});
-
-// Show/hide on interaction or pause
-function showSkipButtons() {
-  skipLeft.style.opacity = '1';
-  skipRight.style.opacity = '1';
-  skipLeft.style.pointerEvents = 'auto';
-  skipRight.style.pointerEvents = 'auto';
-  clearTimeout(skipLeft._timeout);
-  skipLeft._timeout = setTimeout(hideSkipButtons, 700);
+// --- DATA PREPARATION ---
+// 1. New S1 Data (MKV links)
+const s1_raw = [
+{ t: "Ep 01: Ryomen Sukuna", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E01.Ryomen.Sukuna.1080p.x264.Hindi.English.Japanese.Esubs.MoviesMod.org.Dual.mkv?md5=O8WStdo4kYfIx7sGDAQ6-g&expires=1767804861" },
+{ t: "Ep 02: For Myself", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E02.For.Myself.1080p.x264.Hindi.English.Japanese.Esubs.MoviesMod.org.Dual.mkv?md5=LHyaM5uxiqbAvreVwYkaMA&expires=1767804861" },
+{ t: "Ep 03: Girl Of Steel", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E03.Girl.Of.Steel.1080p.x264.Hindi.English.Japanese.Esubs.MoviesMod.org.Dual.mkv?md5=6udASMA9M2kKLFH4toEbsg&expires=1767804861" },
+{ t: "Ep 04: Curse Womb Must Die", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E04.Curse.Womb.Must.Die.1080p.x264.Hindi.English.Japanese.Esubs.MoviesMod.org.Dual.mkv?md5=4ZgZQQvJmxP5_ku9Gp74aw&expires=1767804861" },
+{ t: "Ep 05: Curse Womb Must Die II", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E05.Curse.Womb.Must.Die.-II-.1080p.x264.Hindi.English.Japanese.Esubs.MoviesMod.org.Dual.mkv?md5=8IWQNY7XWJJUOnNgyNWPFw&expires=1767804861" },
+{ t: "Ep 06: After Rain", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E06.After.Rain.1080p.x264.Hindi.English.Japanese.Esubs.MoviesMod.org.Dual.mkv?md5=jfwNiUeUGUTxW9wVanzApw&expires=1767804861" },
+{ t: "Ep 07: Assault", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E07.Assault.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=-HuXfgHfEG9ORWovK7A2ug&expires=1767804861" },
+{ t: "Ep 08: Boredom", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E08.Boredom.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=KQrNk1Jff7StGmLbwxGxaA&expires=1767804861" },
+{ t: "Ep 09: Small Fry And Reverse Retribution", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E09.Small.Fry.And.Reverse.Retribution.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=AsmE7rqKOBhN4OSiRJ96zQ&expires=1767804861" },
+{ t: "Ep 10: Idle Transfiguration", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E10.Idle.Transfiguration.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=T5vI_cMYroScoCHhfX5Juw&expires=1767804861" },
+{ t: "Ep 11: Narrow Minded", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E11.Narrow-Minded.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=nT1D93GQ4zR9aNub3FLrWg&expires=1767804861" },
+{ t: "Ep 12: To You Someday", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E12.To.You.Someday.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=vQYUKGcIgWYPTncwFzUvwA&expires=1767804861" },
+{ t: "Ep 13: Tomorrow", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E13.Tomorrow.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=CiPkA1BRwg50C9LY9zsKEQ&expires=1767804861" },
+{ t: "Ep 14: Kyoto Sister School Exchange", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E14.Kyoto.Sister.School.Exchange.Event.-.Group.Battle.0.-.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=flvAxAaJ3HA4bWJTRG6Oqg&expires=1767804861" },
+{ t: "Ep 15: Exchange Event - Group Battle 1", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E15.Kyoto.Sister.School.Exchange.Event.-.Group.Battle.1.-.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=gybZSe7XaFZfVPXcgIF6hQ&expires=1767804861" },
+{ t: "Ep 16: Exchange Event - Group Battle 2", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E16.Kyoto.Sister.School.Exchange.Event.-.Group.Battle.2.-.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=HKNR15Uc5IwaSD_SUbal3Q&expires=1767804861" },
+{ t: "Ep 17: Exchange Event - Group Battle 3", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E17.Kyoto.Sister.School.Exchange.Event.-.Group.Battle.3.-.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=R4cykWd2yMYl-Bd1euXpKg&expires=1767804861" },
+{ t: "Ep 18: Sage", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E18.Sage.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=hlLFZtoFSfQJn9Z2Ta6aYg&expires=1767804861" },
+{ t: "Ep 19: Black Flash", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E19.Black.Flash.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=Z_C278zo2TX4GCcC3QArNw&expires=1767804861" },
+{ t: "Ep 20: Nonstandard", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E20.Nonstandard.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=OHFlP9RQKZb-oc7ZmFpO7w&expires=1767804861" },
+{ t: "Ep 21: Jujutsu Koshien", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E21.Jujutsu.Koshien.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=iYxayW1eNUXuRX5ZugeCug&expires=1767804861" },
+{ t: "Ep 22: The Origin Of Blind Obedience", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E22.The.Origin.Of.Blind.Obedience.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=y4SObtEKzuP6UA7oyGqXEQ&expires=1767804861" },
+{ t: "Ep 23: The Origin Of Blind Obedience II", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E23.The.Origin.Of.Blind.Obedience.-.2.-.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=uzN_BHodTJpSf_esxw-K3Q&expires=1767804861" },
+{ t: "Ep 24: Accomplices", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%201/Jujutsu.Kaisen.S01E24.Accomplices.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=mnh4js9CAWJ5ISVKLXRk9w&expires=1767804861" }
+];
+// 2. New S2 Data (Ep 22 Missing in provided text, added from previous request)
+const s2_raw = [
+{ t: "Ep 01: Hidden Inventory", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu.Kaisen.S02E01.Hidden.Inventory.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=emGdSp0ZlLDmS-XAcf6x0g&expires=1767804915" },
+{ t: "Ep 02: Hidden Inventory 2", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu.Kaisen.S02E02.Hidden.Inventory.2.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=pInNynXqtZDwVy0W6-zIoA&expires=1767804915" },
+{ t: "Ep 03: Hidden Inventory 3", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/JUJUTSU.KAISEN.S02E03.Hidden.Inventory.3.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=1hqaVXO1XiSSI_3QxUOBEw&expires=1767804915" },
+{ t: "Ep 04: Hidden Inventory 4", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/JUJUTSU.KAISEN.S02E05.Hidden.Inventory.4.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=AuPnj9n1YGDJkhEzs9PTzg&expires=1767804915" },
+{ t: "Ep 05: Premature Death", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/JUJUTSU.KAISEN.S02E05.Premature.Death.1080p.x264.Hindi.Japanese.English.Esubs.MoviesMod.org.Dual.mkv?md5=qgGp4giU1MEaDPip6VabKQ&expires=1767804915" },
+{ t: "Ep 06: Shibuya Incident - Gate Open", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E06%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=i0_G9b7Dwo6ylnHtAAXOJg&expires=1767804915" },
+{ t: "Ep 07: Shibuya Incident", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E07%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=CjfNZG5xXct12cTxIsbv3A&expires=1767804915" },
+{ t: "Ep 08: The Shibuya Incident", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E08%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=IjmNIooZhBpcN6tbEe8QAQ&expires=1767804915" },
+{ t: "Ep 09: Opening Gate", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E09%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=zo1Ua1Bqv0U54xSOGxaoxg&expires=1767804915" },
+{ t: "Ep 10: Pandemonium", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E10%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=CA7vcRu635pDXVtj5YJbcw&expires=1767804915" },
+{ t: "Ep 11: Seance", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E11%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=qYnirl2HPi7DBya5kaG4XA&expires=1767804915" },
+{ t: "Ep 12: Dull Knife", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E12%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=ChfAx7qMlBHeRjeZ_I3CDQ&expires=1767804915" },
+{ t: "Ep 13: Red Scale", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E13%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=deaYV2gI4yYeOU9v-RxlUw&expires=1767804915" },
+{ t: "Ep 14: Fluctuations", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E14%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=_oK8C5U7cQ62JVwAvagJ0w&expires=1767804915" },
+{ t: "Ep 15: Fluctuations 2", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E15%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=K8qVpmFKN5gzwXDF7Ix2dw&expires=1767804915" },
+{ t: "Ep 16: Thunderclap", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E16%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=TC-88OJZIAaE3qNkzbhWWg&expires=1767804915" },
+{ t: "Ep 17: Thunderclap 2", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E17%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=4bfmNWBWdMTT1cfEcAmnmw&expires=1767804915" },
+{ t: "Ep 18: Right and Wrong", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E18%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=FlrFxXnPWiEj0g3E2NmRGw&expires=1767804915" },
+{ t: "Ep 19: Right and Wrong 2", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E19%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=XiOrCLLyy5FQ3YnBMN1v-Q&expires=1767804915" },
+{ t: "Ep 20: Right and Wrong 3", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E20%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=dXKuYG0ZfyWInEZYnmbn0w&expires=1767804915" },
+{ t: "Ep 21: Metamorphosis", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E21%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=IvKz342nkKopO3NFKYiOkQ&expires=1767804915" },
+// RECOVERED EPISODE FROM PREVIOUS DATA
+{ t: "Ep 22: Metamorphosis 2", u: "https://server5.ftpbd.net/FTP-5/Anime--Cartoon-TV-Series/Jujutsu%20Kaisen%20%28Tv%20series%202020%29/Season%202%201080p%20Hin%20Eng%20Jpn/Jujutsu%20Kaisen%20-%20S02E22-1080p-%5BHIN-ENG-JAP%5D_reencoded.mp4" },
+{ t: "Ep 23: Shibuya Incident - Close", u: "https://cds2.discoveryftp.net/Animation%20Tv%20Series/Jujutsu%20Kaisen%20%282020%29/Season%202/Jujutsu%20Kaisen%20-%20S02E23%20%5B1080p%5D%5BHEVC%2010bit%20x265%5D%5BAAC%5D%5BMulti%20Sub%5D.mkv?md5=151S_2XkX5Snp3cdNME9IQ&expires=1767804915" }
+];
+const seasons = { 1: s1_raw, 2: s2_raw };
+let currentSeason = 1;
+let currentIndex = -1;
+const STORE_KEY = "jjk_domain_player_v2";
+// --- APP LOGIC ---
+function getState() {
+return JSON.parse(localStorage.getItem(STORE_KEY)) || { history: {}, last: null };
 }
-function hideSkipButtons() {
-  skipLeft.style.opacity = '0';
-  skipRight.style.opacity = '0';
-  skipLeft.style.pointerEvents = 'none';
-  skipRight.style.pointerEvents = 'none';
+function saveProgress(time, total) {
+if(currentIndex === -1) return;
+const state = getState();
+const epUrl = seasons[currentSeason][currentIndex].u;
+state.history[epUrl] = { time: time, duration: total };
+state.last = { s: currentSeason, i: currentIndex };
+localStorage.setItem(STORE_KEY, JSON.stringify(state));
 }
-
-['mousemove', 'touchstart'].forEach(evt =>
-  container.addEventListener(evt, showSkipButtons)
-);
-player.on('pause', showSkipButtons);
-player.on('play', hideSkipButtons);
-
-  function setHighestQuality() {
-    const availableQualities = player.quality?.options;
-    if (availableQualities && availableQualities.length > 0) {
-      const sorted = availableQualities.filter(q => q !== 'auto').sort((a, b) => parseInt(b) - parseInt(a));
-      if (sorted.length > 0) {
-        player.quality = sorted[0];
-        console.log(`Set highest quality: ${sorted[0]}`);
-      }
-    }
-  }
-
-  function attachClassItemListeners() {
-    const classItems = document.querySelectorAll('.class-item');
-    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-
-    classItems.forEach(item => {
-      if (item._eventListener) item.removeEventListener('click', item._eventListener);
-    });
-
-    classItems.forEach(item => {
-      const listener = () => {
-        const videoId = item.dataset.vid;
-        currentVideoId = videoId;
-        localStorage.setItem('lastSelectedVideo', videoId);
-
-        player.source = {
-          type: 'video',
-          sources: [{ src: videoId, provider: 'youtube' }]
-        };
-
-        const customShareBtn = document.getElementById('customShareBtn');
-        if (customShareBtn) {
-          customShareBtn.addEventListener('click', () => {
-            if (currentVideoId) {
-              const url = `https://www.youtube.com/watch?v=${currentVideoId}`;
-              navigator.clipboard.writeText(url).then(() => alert('Video link copied!'))
-                .catch(() => alert('Copy failed.'));
-            } else alert("No video selected.");
-          });
-        }
-
-        classItems.forEach(i => i.classList.remove('bg-blue-200'));
-        item.classList.add('bg-blue-200');
-
-        const pdfLink = item.dataset.npdf;
-        if (pdfLink) {
-          downloadPdfBtn.href = `https://www.bondipathshala.com.bd/pdf/${pdfLink}`;
-          downloadPdfBtn.classList.remove('hidden');
-        } else {
-          downloadPdfBtn.classList.add('hidden');
-        }
-      };
-      item.addEventListener('click', listener);
-      item._eventListener = listener;
-    });
-  }
-
-  attachClassItemListeners();
-
-  // Load stored videos
-  const storedVideos = JSON.parse(localStorage.getItem('customVideos')) || [];
-  const classListUl = document.getElementById('classList');
-  storedVideos.forEach(video => {
-    const li = document.createElement('li');
-    li.className = 'class-item p-2 rounded hover:bg-blue-100 cursor-pointer';
-    li.dataset.vid = video.id;
-    li.dataset.nname = video.title;
-    li.dataset.npdf = video.pdfLink || '';
-    li.innerHTML = `${video.title}${video.pdfLink ? ` <i class="fas fa-file-pdf text-red-500 ml-2"></i>` : ''}`;
-    classListUl.appendChild(li);
-  });
-  attachClassItemListeners();
-
-  // Resume last watched
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      const lastVideoId = localStorage.getItem('lastSelectedVideo');
-      if (lastVideoId) {
-        const lastItem = [...document.querySelectorAll('.class-item')].find(i => i.dataset.vid === lastVideoId);
-        if (lastItem) {
-          lastItem.click();
-          lastItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }
-    }, 3500);
-  });
-
-function showToast(message) {
-  const toast = document.getElementById('playerToast');
-  toast.textContent = message;
-  toast.style.opacity = '1';
-  clearTimeout(toast._hideTimeout);
-  toast._hideTimeout = setTimeout(() => {
-    toast.style.opacity = '0';
-  }, 1500);
+function resetHistory() {
+if(confirm("Reset all watch progress?")) {
+localStorage.removeItem(STORE_KEY);
+location.reload();
 }
-
-  // Download button
-  const downloadEmojiBtn = document.getElementById('downloadEmojiBtn');
-  if (downloadEmojiBtn) {
-    downloadEmojiBtn.addEventListener('click', () => {
-      if (currentVideoId) {
-        window.open(`https://www.youtube.com/watch?v=${currentVideoId}`, '_blank');
-      } else {
-        alert("No video selected");
-      }
-    });
-  }
-
-  // Global keyboard shortcuts like YouTube
-  window.addEventListener('keydown', event => {
-    const tag = event.target.tagName.toLowerCase();
-    if (tag === 'input' || tag === 'textarea' || event.target.isContentEditable) return;
-
-    const key = event.key.toLowerCase();
-switch (key) {
-case 'k':
-case ' ':
-  event.preventDefault();
-  player.togglePlay();
-  showToast(player.playing ? 'Playing' : 'Paused');
-  break;
-
-case 'arrowup':
-  event.preventDefault();
-  player.volume = Math.min(1, player.volume + 0.1);
-  showToast(`Volume: ${(player.volume * 100).toFixed(0)}%`);
-  break;
-
-case 'arrowdown':
-  event.preventDefault();
-  player.volume = Math.max(0, player.volume - 0.1);
-  showToast(`Volume: ${(player.volume * 100).toFixed(0)}%`);
-  break;
-
-case ',':
-  {
-    const current = player.speed;
-    const options = player.config.speed.options;
-    const index = options.indexOf(current);
-    if (index > 0) {
-      player.speed = options[index - 1];
-      showToast(`Speed: ${player.speed.toFixed(2)}x`);
-    }
-  }
-  break;
-
-case '.':
-  {
-    const current = player.speed;
-    const options = player.config.speed.options;
-    const index = options.indexOf(current);
-    if (index < options.length - 1) {
-      player.speed = options[index + 1];
-      showToast(`Speed: ${player.speed.toFixed(2)}x`);
-    }
-  }
-  break;
-
-case 'arrowleft':
-  player.currentTime = Math.max(0, player.currentTime - 5);
-  showToast(`⏪ -5s`);
-  break;
-
-case 'arrowright':
-  player.currentTime = Math.min(player.duration, player.currentTime + 5);
-  showToast(`⏩ +5s`);
-  break;
-
-case 'j':
-  player.currentTime = Math.max(0, player.currentTime - 10);
-  showToast(`⏪ -10s`);
-  break;
-
-case 'l':
-  player.currentTime = Math.min(player.duration, player.currentTime + 10);
-  showToast(`⏩ +10s`);
-  break;
-
-    }
-  });
-
-  // Save time every 10s
-  setInterval(() => {
-    if (player && currentVideoId && !player.paused) {
-      const progressKey = `videoProgress_${currentVideoId}`;
-      localStorage.setItem(progressKey, player.currentTime);
-    }
-  }, 10000);
-
-  // Resume time when ready
-  player.on('ready', () => {
-    setHighestQuality();
-    if (currentVideoId) {
-      const progressKey = `videoProgress_${currentVideoId}`;
-      const savedTime = parseFloat(localStorage.getItem(progressKey));
-      if (!isNaN(savedTime)) {
-        player.currentTime = savedTime;
-      }
-    }
-  });
-
-  player.on('sourcechange', () => {
-    setTimeout(() => {
-      setHighestQuality();
-      if (currentVideoId) {
-        const progressKey = `videoProgress_${currentVideoId}`;
-        const savedTime = parseFloat(localStorage.getItem(progressKey));
-        if (!isNaN(savedTime)) {
-          player.currentTime = savedTime;
-        }
-      }
-    }, 500);
-  });
-  
-  // Create help button
-const helpBtn = document.createElement('button');
-helpBtn.id = 'helpBtn';
-helpBtn.textContent = '?';
-Object.assign(helpBtn.style, {
-  position: 'fixed',
-  bottom: '20px',
-  right: '20px',
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  backgroundColor: '#1e40af', // blue-800 dark
-  color: 'white',
-  border: 'none',
-  fontSize: '24px',
-  cursor: 'pointer',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.7)',
-  zIndex: '99999',
+}
+function loadSeason(num) {
+currentSeason = num;
+// Update tabs
+document.querySelectorAll('.tab').forEach((t, i) => {
+t.classList.toggle('active', (i + 1) === num);
 });
-document.body.appendChild(helpBtn);
-
-// Create help popup
-const helpPopup = document.createElement('div');
-helpPopup.id = 'helpPopup';
-Object.assign(helpPopup.style, {
-  display: 'none',
-  position: 'fixed',
-  bottom: '75px',
-  right: '20px',
-  width: '300px',
-  backgroundColor: '#111827', // gray-900 dark
-  color: 'white',
-  borderRadius: '12px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.8)',
-  padding: '16px 20px',
-  fontSize: '14px',
-  lineHeight: '1.5',
-  zIndex: '99999',
-  userSelect: 'none',
-  fontFamily: 'Arial, sans-serif',
-});
-helpPopup.innerHTML = `
-  <strong style="font-size:16px;display:block;margin-bottom:10px;">Keyboard Shortcuts</strong>
-  <ul style="padding-left: 18px; margin: 0;">
-    <li><b>K / Space</b>: Play / Pause</li>
-    <li><b>J / ←</b>: Rewind 10s / 5s</li>
-    <li><b>L / →</b>: Forward 10s / 5s</li>
-    <li><b>↑ / ↓</b>: Volume up / down</li>
-    <li><b>M</b>: Mute / Unmute</li>
-    <li><b>F</b>: Fullscreen toggle</li>
-    <li><b>, / .</b>: Speed down / up</li>
-    <li><b>?</b>: Toggle this help</li>
-  </ul>
+renderList();
+}
+function renderList() {
+const list = document.getElementById('playlist');
+list.innerHTML = "";
+const state = getState();
+seasons[currentSeason].forEach((ep, idx) => {
+const isActive = (state.last && state.last.s === currentSeason && state.last.i === idx);
+const history = state.history[ep.u];
+let pct = 0;
+let isDone = false;
+if (history && history.duration > 0) {
+pct = (history.time / history.duration) * 100;
+if(pct > 92) isDone = true;
+}
+const el = document.createElement('div');
+el.className = `ep-card ${isActive ? 'active' : ''} ${pct > 0 ? 'started' : ''} ${isDone ? 'completed' : ''}`;
+el.onclick = () => playEpisode(idx);
+el.innerHTML = `
+<div class="ep-header">
+<span class="ep-title">${ep.t}</span>
+</div>
+<div class="ep-meta">
+<span class="ep-tag">MKV</span>
+<span class="ep-tag">1080p</span>
+</div>
+<div class="progress-track">
+<div class="progress-bar" style="width: ${pct}%"></div>
+</div>
 `;
-document.body.appendChild(helpPopup);
-
-// Toggle function
-function toggleHelp() {
-  helpPopup.style.display = helpPopup.style.display === 'block' ? 'none' : 'block';
+list.appendChild(el);
+});
 }
-
-// Button click toggles popup
-helpBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleHelp();
+const video = document.getElementById('player');
+function playEpisode(index) {
+currentIndex = index;
+const ep = seasons[currentSeason][index];
+const state = getState();
+// Update UI
+document.getElementById('vid-title').innerText = ep.t;
+// Set Video Source
+video.src = ep.u;
+// Update Intent Link
+document.getElementById('open-app-btn').href = `intent://${ep.u}#Intent;type=video/x-matroska;package=org.videolan.vlc;S.title=${encodeURIComponent(ep.t)};end`;
+// Restore Time
+const history = state.history[ep.u];
+if(history) {
+video.currentTime = history.time;
+} else {
+video.currentTime = 0;
+}
+// Attempt to play in browser (might fail on mobile)
+video.play().catch(e => {
+console.log("Browser blocked autoplay or codec not supported. Using app link.");
+// If browser play fails, rely on the app link
 });
-
-// Click outside closes popup
-document.addEventListener('click', (e) => {
-  if (!helpBtn.contains(e.target) && !helpPopup.contains(e.target)) {
-    helpPopup.style.display = 'none';
-  }
+// Update Banner & List
+document.getElementById('resume-banner').style.display = 'none';
+renderList();
+}
+function resumeLast() {
+const state = getState();
+if(state.last) {
+loadSeason(state.last.s);
+playEpisode(state.last.i);
+}
+}
+// --- LISTENERS ---
+video.addEventListener('timeupdate', () => {
+if(Math.floor(video.currentTime) % 5 === 0) {
+saveProgress(video.currentTime, video.duration);
+}
 });
-
-// Press ? key toggles popup
-document.addEventListener('keydown', (e) => {
-  if (e.key === '?') {
-    toggleHelp();
-  }
+video.addEventListener('ended', () => {
+saveProgress(video.duration, video.duration); // Mark full
+renderList();
+// Auto Play Next
+if(currentIndex < seasons[currentSeason].length - 1) {
+playEpisode(currentIndex + 1);
+}
 });
-
-const playerElement = document.getElementById('player'); // your Plyr container
-
-let lastTapTime = 0;
-let lastTapX = 0;
-
-playerElement.addEventListener('touchend', (e) => {
-  const currentTime = Date.now();
-  const tapX = e.changedTouches[0].clientX;
-
-  // Check for double tap within 300ms and close horizontal position (100px)
-  if (currentTime - lastTapTime < 300 && Math.abs(tapX - lastTapX) < 100) {
-    const width = playerElement.clientWidth;
-    const tapSide = tapX < width / 2 ? 'left' : 'right';
-
-    if (tapSide === 'left') {
-      player.currentTime = Math.max(0, player.currentTime - 10);
-      showToast('⏪ 10s');
-    } else {
-      player.currentTime = Math.min(player.duration, player.currentTime + 10);
-      showToast('⏩ 10s');
-    }
-    lastTapTime = 0; // reset to avoid triple tap
-  } else {
-    lastTapTime = currentTime;
-    lastTapX = tapX;
-  }
-});
-
-// Optional: desktop double click support
-playerElement.addEventListener('dblclick', (e) => {
-  const rect = playerElement.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const width = playerElement.clientWidth;
-
-  if (clickX < width / 2) {
-    player.currentTime = Math.max(0, player.currentTime - 10);
-    showToast('⏪ 10s');
-  } else {
-    player.currentTime = Math.min(player.duration, player.currentTime + 10);
-    showToast('⏩ 10s');
-  }
-});
-
-
-
+// Init
+window.onload = () => {
+const state = getState();
+if(state.last) {
+document.getElementById('resume-banner').style.display = 'flex';
+loadSeason(state.last.s); // Load the correct list but don't play yet
+} else {
+loadSeason(1);
+}
+};
 </script>
-
-<div id="playerToast"
-     style="position: fixed; bottom: 10%; left: 50%; transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.8); color: white;
-            padding: 10px 20px; border-radius: 8px;
-            font-size: 16px; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;">
-
 </body>
 </html>
-
-
+```
